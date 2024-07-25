@@ -1,4 +1,3 @@
-import { get } from 'http';
 import { test, expect } from 'playwright-test-coverage';
 
 test('register', async ({ page }) => {
@@ -18,6 +17,8 @@ test('register', async ({ page }) => {
   await page.getByPlaceholder('Email address').press('Tab');
   await page.getByPlaceholder('Password').fill('password');
   await page.getByRole('button', { name: 'Register' }).click();
+
+  await expect(page.getByText("The web's best pizza", { exact: true })).toBeVisible();
 });
 
 test('purchase with login', async ({ page }) => {
@@ -161,6 +162,42 @@ test('admin page', async ({ page }) => {
   await expect(page.locator('table tr')).toHaveCount(3);
 });
 
+test('close store', async ({ page }) => {
+  const originalPizza = { id: 5, name: 'originalPizza', admins: [{ id: 3, name: '常用名字', email: 'a@jwt.com' }], stores: [{ id: 8, name: 'orem', totalRevenue: 0 }] };
+  const closedPizza = { id: 5, name: 'originalPizza', admins: [{ id: 3, name: '常用名字', email: 'a@jwt.com' }], stores: [] };
+  let getFranchiseResPos = 0;
+  const getFranchiseRes = [[originalPizza], [closedPizza]];
+
+  await page.route('*/**/api/auth', async (route) => {
+    const loginRes = { user: { id: 3, name: '常用名字', email: 'a@jwt.com', roles: [{ role: 'admin' }] }, token: 'abcdefg' };
+    await route.fulfill({ json: loginRes });
+  });
+
+  await page.route('*/**/api/franchise', async (route) => {
+    await route.fulfill({ json: getFranchiseRes[getFranchiseResPos++] });
+  });
+
+  await page.route('*/**/api/franchise/5/store/8', async (route) => {
+    if (route.request().method() === 'DELETE') {
+      await route.fulfill({ json: { message: 'store deleted' } });
+    }
+  });
+
+  await page.goto('http://localhost:5173/login');
+
+  await page.getByPlaceholder('Email address').click();
+  await page.getByPlaceholder('Email address').fill('a@jwt.com');
+  await page.getByPlaceholder('Email address').press('Tab');
+  await page.getByPlaceholder('Password').fill('admin');
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  await page.getByRole('link', { name: 'Admin' }).click();
+
+  await page.getByRole('row', { name: 'orem 0 ₿ Close' }).getByRole('button').click();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.locator('table tr')).toHaveCount(2);
+});
+
 test('non-interactive pages', async ({ page }) => {
   await page.route('*/**/api/auth', async (route) => {
     const loginRes = { user: { id: 3, name: 'admin', email: 'a@jwt.com', roles: [{ role: 'admin' }] }, token: 'abcdefg' };
@@ -176,9 +213,16 @@ test('non-interactive pages', async ({ page }) => {
   await page.getByRole('button', { name: 'Login' }).click();
 
   await page.goto('http://localhost:5173/diner-dashboard');
+  await expect(page.getByText('Your pizza kitchen', { exact: true })).toBeVisible();
+
   await page.goto('http://localhost:5173/franchise-dashboard');
+  await expect(page.getByText('So you want a piece of the pie?', { exact: true })).toBeVisible();
+
   await page.goto('http://localhost:5173/history');
+  await expect(page.getByText('Mama Rucci, my my', { exact: true })).toBeVisible();
+
   await page.goto('http://localhost:5173/about');
+  await expect(page.getByText('The secret sauce', { exact: true })).toBeVisible();
 });
 
 test('docs', async ({ page }) => {
