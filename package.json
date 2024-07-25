@@ -8,12 +8,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "playwright test",
-    "test:coverage": "nyc --reporter=json-summary --reporter=text playwright test"
+    "test:coverage": "nyc --reporter=json-summary --reporter=text playwright test",
+    "test": "playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.45.1",
-    "@types/node": "^20.14.10",
+    "@playwright/test": "^1.45.3",
+    "@types/node": "^20.14.12",
     "autoprefixer": "^10.4.19",
     "nyc": "^17.0.0",
     "playwright-test-coverage": "^1.2.12",
