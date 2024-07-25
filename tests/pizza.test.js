@@ -1,6 +1,25 @@
 import { get } from 'http';
 import { test, expect } from 'playwright-test-coverage';
 
+test('register', async ({ page }) => {
+  await page.route('*/**/api/auth', async (route) => {
+    const regReq = { email: 'bud@cow.com', password: 'password' };
+    const regRes = { user: { id: 99, name: 'bud', email: 'bud@cow.com', roles: [{ role: 'diner' }] }, token: 'abcdef' };
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON()).toMatchObject(regReq);
+    await route.fulfill({ json: regRes });
+  });
+  await page.goto('http://localhost:5173/');
+  await page.getByRole('link', { name: 'Register' }).click();
+  await page.getByPlaceholder('Full name').click();
+  await page.getByPlaceholder('Full name').fill('bud');
+  await page.getByPlaceholder('Full name').press('Tab');
+  await page.getByPlaceholder('Email address').fill('bud@cow.com');
+  await page.getByPlaceholder('Email address').press('Tab');
+  await page.getByPlaceholder('Password').fill('password');
+  await page.getByRole('button', { name: 'Register' }).click();
+});
+
 test('purchase with login', async ({ page }) => {
   await page.route('*/**/api/order/menu', async (route) => {
     const menuRes = [
@@ -112,7 +131,6 @@ test('admin page', async ({ page }) => {
 
   await page.route('*/**/api/franchise', async (route) => {
     if (route.request().method() === 'GET') {
-      console.log('get franchise', JSON.stringify(getFranchiseRes[getFranchiseResPos]));
       await route.fulfill({ json: getFranchiseRes[getFranchiseResPos++] });
     } else if (route.request().method() === 'POST') {
       await route.fulfill({
@@ -164,8 +182,40 @@ test('non-interactive pages', async ({ page }) => {
   await page.getByRole('button', { name: 'Login' }).click();
 
   await page.goto('http://localhost:5173/diner-dashboard');
-
   await page.goto('http://localhost:5173/franchise-dashboard');
   await page.goto('http://localhost:5173/history');
   await page.goto('http://localhost:5173/about');
+});
+
+test('docs', async ({ page }) => {
+  await page.route('*/**/api/docs', async (route) => {
+    await route.fulfill({
+      json: {
+        version: '20240725.172710',
+        endpoints: [
+          {
+            method: 'POST',
+            path: '/api/auth',
+            description: 'Register a new user',
+            example: 'curl -X POST localhost:3000/api/auth -d \'{"name":"pizza diner", "email":"d@jwt.com", "password":"diner"}\' -H \'Content-Type: application/json\'',
+            response: {
+              user: {
+                id: 2,
+                name: 'pizza diner',
+                email: 'd@jwt.com',
+                roles: [
+                  {
+                    role: 'diner',
+                  },
+                ],
+              },
+              token: 'tttttt',
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  await page.goto('http://localhost:5173/docs');
 });
