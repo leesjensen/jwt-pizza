@@ -114,15 +114,9 @@ test('purchase with login', async ({ page }) => {
 });
 
 test('admin page', async ({ page }) => {
+  const originalPizza = { id: 5, name: 'originalPizza', admins: [{ id: 3, name: '常用名字', email: 'a@jwt.com' }], stores: [{ id: 8, name: 'orem', totalRevenue: 0 }] };
   let getFranchiseResPos = 0;
-  const getFranchiseRes = [
-    [{ id: 5, name: 'originalPizza', admins: [{ id: 3, name: '常用名字', email: 'a@jwt.com' }], stores: [] }],
-    [
-      { id: 5, name: 'originalPizza', admins: [{ id: 3, name: '常用名字', email: 'a@jwt.com' }], stores: [] },
-      { id: 18, name: 'tacoPizza', admins: [{ id: 3, name: '常用名字', email: 'a@jwt.com' }], stores: [] },
-    ],
-    [{ id: 5, name: 'originalPizza', admins: [{ id: 3, name: '常用名字', email: 'a@jwt.com' }], stores: [] }],
-  ];
+  const getFranchiseRes = [[originalPizza], [originalPizza, { id: 18, name: 'tacoPizza', admins: [{ id: 3, name: '常用名字', email: 'a@jwt.com' }], stores: [] }], [originalPizza]];
 
   await page.route('*/**/api/auth', async (route) => {
     const loginRes = { user: { id: 3, name: '常用名字', email: 'a@jwt.com', roles: [{ role: 'admin' }] }, token: 'abcdefg' };
@@ -161,10 +155,10 @@ test('admin page', async ({ page }) => {
   await page.getByPlaceholder('franchise name').press('Tab');
   await page.getByPlaceholder('franchisee admin email').fill('a@jwt.com');
   await page.getByRole('button', { name: 'Create' }).click();
-  await expect(page.locator('table tr')).toHaveCount(3);
+  await expect(page.locator('table tr')).toHaveCount(4);
   await page.getByRole('row', { name: 'tacoPizza 常用名字 Close' }).getByRole('button').click();
   await page.getByRole('button', { name: 'Close' }).click();
-  await expect(page.locator('table tr')).toHaveCount(2);
+  await expect(page.locator('table tr')).toHaveCount(3);
 });
 
 test('non-interactive pages', async ({ page }) => {
