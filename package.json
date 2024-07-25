@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:coverage": "nyc --reporter=json-summary --reporter=text playwright test",
+    "test:coverage": "nyc --reporter=json-summary  --reporter=clover --reporter=text playwright test",
     "test": "playwright test"
   },
   "devDependencies": {

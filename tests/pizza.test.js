@@ -1,5 +1,32 @@
 import { test, expect } from 'playwright-test-coverage';
 
+test('franchisee', async ({ page }) => {
+  const originalPizza = { id: 5, name: 'originalPizza', admins: [{ id: 3, name: 'f', email: 'f@jwt.com' }], stores: [{ id: 8, name: 'orem', totalRevenue: 0 }] };
+  let getFranchiseResPos = 0;
+  const getFranchiseRes = [[originalPizza], [originalPizza]];
+
+  await page.route('*/**/api/auth', async (route) => {
+    const loginRes = { user: { id: 33, name: 'f', email: 'f@jwt.com', roles: [{ objectId: 5, role: 'franchisee' }] }, token: 'abcdefg' };
+    await route.fulfill({ json: loginRes });
+  });
+
+  await page.route('*/**/api/franchise/33', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({ json: getFranchiseRes[getFranchiseResPos++] });
+    }
+  });
+
+  await page.goto('http://localhost:5173/login');
+
+  await page.getByPlaceholder('Email address').click();
+  await page.getByPlaceholder('Email address').fill('f@jwt.com');
+  await page.getByPlaceholder('Password').fill('f');
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  await page.getByLabel('Global').getByRole('link', { name: 'Franchise' }).click();
+  await expect(page.getByText('originalPizza', { exact: true })).toBeVisible();
+});
+
 test('register', async ({ page }) => {
   await page.route('*/**/api/auth', async (route) => {
     const regReq = { email: 'bud@cow.com', password: 'password' };
@@ -12,9 +39,7 @@ test('register', async ({ page }) => {
   await page.getByRole('link', { name: 'Register' }).click();
   await page.getByPlaceholder('Full name').click();
   await page.getByPlaceholder('Full name').fill('bud');
-  await page.getByPlaceholder('Full name').press('Tab');
   await page.getByPlaceholder('Email address').fill('bud@cow.com');
-  await page.getByPlaceholder('Email address').press('Tab');
   await page.getByPlaceholder('Password').fill('password');
   await page.getByRole('button', { name: 'Register' }).click();
 
@@ -58,29 +83,46 @@ test('purchase with login', async ({ page }) => {
   });
 
   await page.route('*/**/api/order', async (route) => {
-    const orderReq = {
-      items: [
-        { menuId: 1, description: 'Veggie', price: 0.0038 },
-        { menuId: 2, description: 'Pepperoni', price: 0.0042 },
-      ],
-      storeId: '4',
-      franchiseId: 2,
-    };
-    const orderRes = {
-      order: {
+    if (route.request().method() === 'POST') {
+      const orderReq = {
         items: [
           { menuId: 1, description: 'Veggie', price: 0.0038 },
           { menuId: 2, description: 'Pepperoni', price: 0.0042 },
         ],
         storeId: '4',
         franchiseId: 2,
-        id: 23,
-      },
-      jwt: 'eyJpYXQ',
-    };
-    expect(route.request().method()).toBe('POST');
-    expect(route.request().postDataJSON()).toMatchObject(orderReq);
-    await route.fulfill({ json: orderRes });
+      };
+      const orderRes = {
+        order: {
+          items: [
+            { menuId: 1, description: 'Veggie', price: 0.0038 },
+            { menuId: 2, description: 'Pepperoni', price: 0.0042 },
+          ],
+          storeId: '4',
+          franchiseId: 2,
+          id: 23,
+        },
+        jwt: 'eyJpYXQ',
+      };
+      expect(route.request().method()).toBe('POST');
+      expect(route.request().postDataJSON()).toMatchObject(orderReq);
+      await route.fulfill({ json: orderRes });
+    } else if (route.request().method() === 'GET') {
+      const getOrdersRes = {
+        dinerId: 3,
+        orders: [
+          {
+            id: 1,
+            franchiseId: 1,
+            storeId: 1,
+            date: '2024-05-07T20:21:27.000Z',
+            items: [{ id: 1, menuId: 1, description: 'Veggie', price: 0.05 }],
+          },
+        ],
+        page: 1,
+      };
+      await route.fulfill({ json: getOrdersRes });
+    }
   });
 
   await page.goto('http://localhost:5173/');
@@ -112,6 +154,9 @@ test('purchase with login', async ({ page }) => {
 
   // Check balance
   await expect(page.getByText('0.008')).toBeVisible();
+
+  await page.goto('http://localhost:5173/diner-dashboard');
+  await expect(page.getByText('Your pizza kitchen', { exact: true })).toBeVisible();
 });
 
 test('admin page', async ({ page }) => {
@@ -208,7 +253,6 @@ test('non-interactive pages', async ({ page }) => {
 
   await page.getByPlaceholder('Email address').click();
   await page.getByPlaceholder('Email address').fill('a@jwt.com');
-  await page.getByPlaceholder('Email address').press('Tab');
   await page.getByPlaceholder('Password').fill('a');
   await page.getByRole('button', { name: 'Login' }).click();
 
