@@ -22,7 +22,6 @@ jobs:
         run: |
           printf '{"version": "%s" }' $(date +'%Y%m%d.%H%M%S') > public/version.json
           npm ci && npm run build
-          cp dist/index.html dist/404.html
 
       # - name: Run tests
       #   run: |
