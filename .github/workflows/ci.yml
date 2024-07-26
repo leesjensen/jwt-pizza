@@ -41,9 +41,10 @@ jobs:
       #     git commit -m "generated"
       #     git push
 
-      - name: Update pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Update dist artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: package
           path: dist/
   deploy:
     needs: build
@@ -58,7 +59,7 @@ jobs:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/${{ secrets.CI_IAM_ROLE }}
 
-      - name: Download pages artifact
+      - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
           name: package
@@ -66,4 +67,5 @@ jobs:
 
       - name: Push to AWS S3
         run: |
-          aws s3 cp dist s3://secrets.APP_BUCKET --recursive
+          aws s3 cp dist s3://${{ secrets.APP_BUCKET }} --recursive
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/*"
