@@ -57,6 +57,9 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://pizza.leesjensen.com
     steps:
       - name: Create OIDC token to AWS
         uses: aws-actions/configure-aws-credentials@v4
