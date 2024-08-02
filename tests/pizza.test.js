@@ -157,6 +157,7 @@ test('purchase with login', async ({ page }) => {
 
   await page.goto('http://localhost:5173/diner-dashboard');
   await expect(page.getByText('Your pizza kitchen', { exact: true })).toBeVisible();
+  await expect(page.getByText('0.05')).toBeVisible();
 });
 
 test('admin page', async ({ page }) => {
