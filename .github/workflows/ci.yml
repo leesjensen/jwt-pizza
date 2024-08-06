@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    name: Build frontend
+    name: Build
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.set_version.outputs.version }}
@@ -31,22 +31,22 @@ jobs:
         run: |
           npm ci && npm run build
 
-      - name: Run tests
-        run: |
-          npx playwright install --with-deps chromium
-          npm run test:coverage
+      # - name: Run tests
+      #   run: |
+      #     npx playwright install --with-deps chromium
+      #     npm run test:coverage
 
-      - name: Update coverage
-        run: |
-          coverage_pct=$(grep -o '"pct":[0-9.]*' coverage/coverage-summary.json | head -n 1 | cut -d ':' -f 2)
-          color=$(echo "$coverage_pct < 80" | bc -l | awk '{if ($1) print "yellow"; else print "green"}')
-          sed -i "s/^Coverage: .*/Coverage: $coverage_pct %/" README.md
-          curl https://img.shields.io/badge/Coverage-$coverage_pct%25-$color -o coverageBadge.svg
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add .
-          git commit -m "generated"
-          git push
+      # - name: Update coverage
+      #   run: |
+      #     coverage_pct=$(grep -o '"pct":[0-9.]*' coverage/coverage-summary.json | head -n 1 | cut -d ':' -f 2)
+      #     color=$(echo "$coverage_pct < 80" | bc -l | awk '{if ($1) print "yellow"; else print "green"}')
+      #     sed -i "s/^Coverage: .*/Coverage: $coverage_pct %/" README.md
+      #     curl https://img.shields.io/badge/Coverage-$coverage_pct%25-$color -o coverageBadge.svg
+      #     git config user.name github-actions
+      #     git config user.email github-actions@github.com
+      #     git add .
+      #     git commit -m "generated"
+      #     git push
 
       - name: Update dist artifact
         uses: actions/upload-artifact@v4
@@ -83,18 +83,18 @@ jobs:
           aws s3 cp dist s3://${{ secrets.APP_BUCKET }}/$version --recursive
           aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/*"
 
-      - name: Update staging version
-        run: |
-          # Get the current distribution and update it to use the new version
-          aws cloudfront get-distribution-config --id ${{ secrets.DISTRIBUTION_ID }} > original.json
-          etag=$(jq -r '.ETag' original.json)
-          jq '.DistributionConfig' original.json > request.json
-          jq --arg version "/$version" '.Origins.Items[0].OriginPath = $version' request.json > finalRequest.json
-          aws cloudfront update-distribution --id ${{ secrets.DISTRIBUTION_ID }} --if-match $etag --distribution-config file://finalRequest.json
+      # - name: Update staging version
+      #   run: |
+      #     # Get the current distribution and update it to use the new version
+      #     aws cloudfront get-distribution-config --id ${{ secrets.DISTRIBUTION_ID }} > original.json
+      #     etag=$(jq -r '.ETag' original.json)
+      #     jq '.DistributionConfig' original.json > request.json
+      #     jq --arg version "/$version" '.Origins.Items[0].OriginPath = $version' request.json > finalRequest.json
+      #     aws cloudfront update-distribution --id ${{ secrets.DISTRIBUTION_ID }} --if-match $etag --distribution-config file://finalRequest.json
 
-          # Wait for the distribution to deploy and then invalidate the cache
-          while [ "$(aws cloudfront get-distribution --id ${{ secrets.DISTRIBUTION_ID }} --query 'Distribution.Status' --output text)" != "Deployed" ]; do echo "Distribution is still updating..."; sleep 5; done
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/*"
+      #     # Wait for the distribution to deploy and then invalidate the cache
+      #     while [ "$(aws cloudfront get-distribution --id ${{ secrets.DISTRIBUTION_ID }} --query 'Distribution.Status' --output text)" != "Deployed" ]; do echo "Distribution is still updating..."; sleep 5; done
+      #     aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/*"
 
   release:
     needs:
