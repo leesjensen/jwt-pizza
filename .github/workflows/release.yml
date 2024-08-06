@@ -54,3 +54,7 @@ jobs:
             ## 🚀 Description
 
             ${{ github.event.inputs.description }}
+      - name: Annotate deployment in Grafana
+        run: |
+          echo VERSION $version
+          curl -s -X POST https://explore1.grafana.net/api/annotations -H "Authorization: Bearer ${{ secrets.GRAFANA_ACCESS_TOKEN }}" -H "Content-Type:application/json" -d '{"dashboardUID":"adtx9s95we41sf", "panelId":6, "text":"Frontend production '"$version"' deployed" }'
