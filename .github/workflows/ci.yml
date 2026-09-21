@@ -33,7 +33,7 @@ jobs:
           cp dist/index.html dist/404.html
 
       - name: Update pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist/
   deploy:
