@@ -59,6 +59,6 @@ jobs:
       - name: Push to AWS S3
         run: |
           mkdir dist
-          printf "<h1>Hazzzza</h1>" > dist/index.html
+          printf "<h1>Michelle</h1>" > dist/index.html
           aws s3 cp dist s3://${{ secrets.APP_BUCKET }} --recursive
           aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/*"
