@@ -32,25 +32,13 @@ jobs:
           npm ci && npm run build
           cp dist/index.html dist/404.html
 
-      - name: Update pages artifact
-        uses: actions/upload-pages-artifact@v5.0.0
+      - name: Update dist artifact
+        uses: actions/upload-artifact@v7.0.2
         with:
+          name: package
           path: dist/
 
       - name: Run tests
         run: |
           npx playwright install --with-deps chromium
           npm run test:coverage
-  deploy:
-    needs: build
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5.0.1
