@@ -38,10 +38,10 @@ jobs:
           name: package
           path: dist/
 
-  #     - name: Run tests
-  #       run: |
-  #         npx playwright install --with-deps chromium
-  #         npm run test:coverage
+      - name: Run tests
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:coverage
   deploy:
     needs: build
     permissions:
